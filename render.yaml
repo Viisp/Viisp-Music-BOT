@@ -1,0 +1,7 @@
+services:
+  - type: worker
+    name: viisp-music-bot
+    env: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node src/index.js
