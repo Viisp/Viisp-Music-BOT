@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits, Collection } = require('discord.js');
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
+const ffmpegPath = require('ffmpeg-static');
 
 const client = new Client({
   intents: [
@@ -15,6 +16,7 @@ const client = new Client({
 client.commands = new Collection();
 
 const distube = new DisTube(client, {
+  ffmpegPath,
   plugins: [
     new SpotifyPlugin({
       api: {
