@@ -30,7 +30,7 @@ module.exports = {
       if (!tracks) return interaction.respond([]);
       await interaction.respond(
         tracks.map(t => ({
-          name: `${t.name} — ${t.artists}`.substring(0, 100),
+          name: t.name.substring(0, 100),
           value: t.url,
         }))
       );
