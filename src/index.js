@@ -1,4 +1,6 @@
 require('dotenv').config();
+// Force IPv4 DNS resolution — fixes voice UDP on Railway
+require('dns').setDefaultResultOrder('ipv4first');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord.js');
 const fs = require('fs');
