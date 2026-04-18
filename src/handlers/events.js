@@ -7,7 +7,7 @@ function loadEvents(client) {
   // Prevent unhandled errors from crashing the process
   client.on('error', err => console.error('Client error:', err));
 
-  client.on('ready', () => {
+  client.once('clientReady', () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
   });
 

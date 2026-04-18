@@ -6,7 +6,7 @@ const { YtDlpPlugin } = require('@distube/yt-dlp');
 // Add ffmpeg-static binary directory to PATH so DisTube can find 'ffmpeg'
 const ffmpegStatic = require('ffmpeg-static');
 const nodePath = require('path');
-process.env.PATH = nodePath.dirname(ffmpegStatic) + ':' + (process.env.PATH || '');
+process.env.PATH = nodePath.dirname(ffmpegStatic) + nodePath.delimiter + (process.env.PATH || '');
 
 const client = new Client({
   intents: [
