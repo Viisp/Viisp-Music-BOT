@@ -26,7 +26,7 @@ const distube = new DisTube(client, {
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       },
     }),
-    new YtDlpPlugin({ update: false }),
+    new YtDlpPlugin({ update: true }),
   ],
 });
 
