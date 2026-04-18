@@ -66,19 +66,28 @@ function loadEvents(client) {
 
     // Select menu résultats de recherche
     if (interaction.isStringSelectMenu() && interaction.customId === 'music_search_select') {
-      const spotifyUrl = interaction.values[0];
+      const url = interaction.values[0];
       const voiceChannel = interaction.member.voice.channel;
 
       if (!voiceChannel) {
-        return interaction.reply({ content: '❌ Rejoins un salon vocal.', flags: MessageFlags.Ephemeral });
+        try { await interaction.reply({ content: '❌ Rejoins un salon vocal.', flags: MessageFlags.Ephemeral }); } catch {}
+        return;
       }
 
-      await interaction.deferUpdate();
-      await distube.play(voiceChannel, spotifyUrl, {
-        member: interaction.member,
-        textChannel: interaction.channel,
-      });
-      await interaction.editReply({ components: [] }); // remove select menu after selection
+      // Acknowledge interaction — ignore errors (latency can cause 404)
+      try { await interaction.deferUpdate(); } catch {}
+
+      // Always attempt to play regardless of interaction ack result
+      try {
+        await distube.play(voiceChannel, url, {
+          member: interaction.member,
+          textChannel: interaction.channel,
+        });
+        try { await interaction.editReply({ components: [] }); } catch {}
+      } catch (err) {
+        console.error('Play error:', err.message);
+        try { await interaction.followUp({ content: `❌ Erreur : ${err.message}`, flags: MessageFlags.Ephemeral }); } catch {}
+      }
     }
   });
 
