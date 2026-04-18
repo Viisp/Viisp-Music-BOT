@@ -1,6 +1,9 @@
 require('dotenv').config();
-// Force IPv4 DNS resolution — fixes voice UDP on Railway
 require('dns').setDefaultResultOrder('ipv4first');
+
+// Minimal HTTP server so Railway treats this as a web service (full network access)
+const http = require('http');
+http.createServer((_, res) => res.end('ok')).listen(process.env.PORT || 3000);
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord.js');
 const fs = require('fs');
