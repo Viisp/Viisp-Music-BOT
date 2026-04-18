@@ -10,7 +10,8 @@ module.exports = {
       opt
         .setName('query')
         .setDescription("Nom d'artiste, titre, URL Spotify ou YouTube")
-        .setRequired(false),
+        .setRequired(false)
+        .setAutocomplete(true),
     )
     .addAttachmentOption(opt =>
       opt
@@ -19,63 +20,75 @@ module.exports = {
         .setRequired(false),
     ),
 
+  // Autocomplete handler — called as user types
+  async autocomplete(interaction) {
+    const query = interaction.options.getFocused();
+    if (!query || query.length < 2) return interaction.respond([]);
+
+    try {
+      const tracks = await searchArtistTopTracks(query);
+      if (!tracks) return interaction.respond([]);
+      await interaction.respond(
+        tracks.map(t => ({
+          name: `${t.name} — ${t.artists}`.substring(0, 100),
+          value: t.url,
+        }))
+      );
+    } catch {
+      await interaction.respond([]);
+    }
+  },
+
   async execute(interaction, client) {
-    // Acknowledge immediately to avoid 3s Discord timeout
-    await interaction.deferReply();
+    // Defer immediately — wrap in try/catch to survive latency issues
+    try {
+      await interaction.deferReply();
+    } catch {
+      // Interaction already acknowledged or expired — try to continue anyway
+    }
+
+    const reply = async (content) => {
+      try {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.editReply(typeof content === 'string' ? { content } : content);
+        }
+      } catch {}
+    };
 
     const voiceChannel = interaction.member.voice.channel;
-    if (!voiceChannel) {
-      return interaction.editReply({ content: '❌ Tu dois être dans un salon vocal.' });
-    }
+    if (!voiceChannel) return reply('❌ Tu dois être dans un salon vocal.');
 
     const query = interaction.options.getString('query');
     const attachment = interaction.options.getAttachment('fichier');
 
-    if (!query && !attachment) {
-      return interaction.editReply({ content: '❌ Fournis une recherche ou un fichier MP3.' });
-    }
+    if (!query && !attachment) return reply('❌ Fournis une recherche ou un fichier MP3.');
 
     // Fichier MP3 uploadé
     if (attachment) {
-      const isAudio =
-        attachment.name.toLowerCase().endsWith('.mp3') ||
-        attachment.contentType?.startsWith('audio/');
-      if (!isAudio) {
-        return interaction.editReply({ content: '❌ Seuls les fichiers audio (.mp3) sont supportés.' });
-      }
-      await client.distube.play(voiceChannel, attachment.url, {
-        member: interaction.member,
-        textChannel: interaction.channel,
-      });
-      return interaction.editReply({ content: `🎵 Lecture de **${attachment.name}**...` });
+      const isAudio = attachment.name.toLowerCase().endsWith('.mp3') || attachment.contentType?.startsWith('audio/');
+      if (!isAudio) return reply('❌ Seuls les fichiers audio (.mp3) sont supportés.');
+      await client.distube.play(voiceChannel, attachment.url, { member: interaction.member, textChannel: interaction.channel });
+      return reply(`🎵 Lecture de **${attachment.name}**...`);
     }
 
     const isUrl = query.startsWith('http://') || query.startsWith('https://');
 
-    // URL directe (Spotify ou YouTube)
+    // URL directe (Spotify ou YouTube) ou valeur autocomplete (déjà une URL YouTube)
     if (isUrl) {
-      await client.distube.play(voiceChannel, query, {
-        member: interaction.member,
-        textChannel: interaction.channel,
-      });
-      return interaction.editReply({ content: '🎵 Lecture en cours...' });
+      await client.distube.play(voiceChannel, query, { member: interaction.member, textChannel: interaction.channel });
+      return reply('🎵 Lecture en cours...');
     }
 
-    // Recherche texte → top 5 résultats YouTube
+    // Recherche texte → top 5 résultats
     try {
       const tracks = await searchArtistTopTracks(query);
-      if (tracks && tracks.length) {
-        return interaction.editReply(searchSelectMenu(tracks, query));
-      }
+      if (tracks && tracks.length) return reply(searchSelectMenu(tracks, query));
     } catch (err) {
       console.error('Search error:', err.message);
     }
 
-    // Fallback : lecture directe
-    await client.distube.play(voiceChannel, query, {
-      member: interaction.member,
-      textChannel: interaction.channel,
-    });
-    return interaction.editReply({ content: '🎵 Lecture en cours...' });
+    // Fallback lecture directe
+    await client.distube.play(voiceChannel, query, { member: interaction.member, textChannel: interaction.channel });
+    return reply('🎵 Lecture en cours...');
   },
 };

@@ -12,6 +12,15 @@ function loadEvents(client) {
   });
 
   client.on('interactionCreate', async interaction => {
+    // Autocomplete
+    if (interaction.isAutocomplete()) {
+      const command = client.commands.get(interaction.commandName);
+      if (command?.autocomplete) {
+        try { await command.autocomplete(interaction); } catch { try { await interaction.respond([]); } catch {} }
+      }
+      return;
+    }
+
     // Slash commands
     if (interaction.isChatInputCommand()) {
       const command = client.commands.get(interaction.commandName);
